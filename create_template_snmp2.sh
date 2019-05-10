@@ -106,13 +106,13 @@ create_stpl_snmp() {
   if [ $? -ne 0 ]
   then
     $CLAPI -o STPL -a add -v "stpl_os_linux_snmp_ uptime;uptime;service-generique-actif"
-	$CLAPI -o STPL -a setparam -v "stpl_os_linux_snmp_uptime;check_command;cmd_os_linux_snmp_uptime"
-	$CLAPI -o STPL -a setmacro -v "stpl_os_linux_snmp_uptime;WARNING;7889400"
+    $CLAPI -o STPL -a setparam -v "stpl_os_linux_snmp_uptime;check_command;cmd_os_linux_snmp_uptime"
+    $CLAPI -o STPL -a setmacro -v "stpl_os_linux_snmp_uptime;WARNING;7889400"
     $CLAPI -o STPL -a setmacro -v "stpl_os_linux_snmp_uptime;CRITICAL;23668200"
-	$CLAPI -o STPL -a setparam -v "stpl_os_linux_snmp_uptime;graphtemplate;Uptime"
-	
+    $CLAPI -o STPL -a setparam -v "stpl_os_linux_snmp_uptime;graphtemplate;Uptime"
 
-  ##SNMP_processcount ( IDEM STPL POOLER )
+
+  ##SNMP_processcount ( IDEM STPL POOLER ??? ... )
   #stpl_os_linux_snmp_processcount	
   if [ $? -ne 0 ]
   then
@@ -120,13 +120,11 @@ create_stpl_snmp() {
     $CLAPI -o STPL -a setparam -v "stpl_os_linux_snmp_processcount;check_command;cmd_os_linux_snmp_process"
     $CLAPI -o STPL -a setmacro -v "stpl_os_linux_snmp_processcount;WARNING;70"
     $CLAPI -o STPL -a setmacro -v "stpl_os_linux_snmp_processcount;CRITICAL;90"
-	$CLAPI -o STPL -a setmacro -v "stpl_os_linux_snmp_processcount;PROCESSNAME; "
-	$CLAPI -o STPL -a setmacro -v "stpl_os_linux_snmp_processcount;PROCESSPATH; "
-	$CLAPI -o STPL -a setmacro -v "stpl_os_linux_snmp_processcount;PROCESSARGS; "
-	$CLAPI -o STPL -a setmacro -v "stpl_os_linux_snmp_processcount;OPTION; "
-	# $CLAPI -o STPL -a setparam -v "stpl_os_linux_snmp_processcount;graphtemplate;??????" <->  Grph Template ?
-	
-		
+    $CLAPI -o STPL -a setmacro -v "stpl_os_linux_snmp_processcount;PROCESSNAME; "
+    $CLAPI -o STPL -a setmacro -v "stpl_os_linux_snmp_processcount;PROCESSPATH; "
+    $CLAPI -o STPL -a setmacro -v "stpl_os_linux_snmp_processcount;PROCESSARGS; "
+    $CLAPI -o STPL -a setmacro -v "stpl_os_linux_snmp_processcount;OPTION; "
+    # $CLAPI -o STPL -a setparam -v "stpl_os_linux_snmp_processcount;graphtemplate;??????" <->  Grph Template ?
 		### ----- WWW-SERVER -------
 	#stpl_os_linux_snmp_processcount_Apache2
 	#stpl_os_linux_snmp_processcount_Nginx
@@ -143,12 +141,7 @@ create_stpl_snmp() {
 	   ####
 	#       -> python
 	#		-> java
-	# 		->snmpd
-
-
-
-
-
+        # 		->snmpd
   ##SNMP_disk_name
   #stpl_os_linux_snmp_disk_name
   if [ $? -ne 0 ]
@@ -159,22 +152,21 @@ create_stpl_snmp() {
     $CLAPI -o STPL -a setmacro -v "stpl_os_linux_snmp_disk_name;CRITICAL;90"
     $CLAPI -o STPL -a setparam -v "stpl_os_linux_snmp_disk_name;graphtemplate;Storage"
 
-# DISK
+# DISK  ( A FINIR +  DISK IO ...)
 # Model Disk
-clapi -o STPL -a add -v "disk-remote-Model-Service;disk-remote-model;Model-service-active"
-clapi -o STPL -a setparam -v "disk-remote-Model-Service;check_command;check_centreon_plugin_remote_os"
-clapi -o STPL -a setmacro -v "disk-remote-Model-Service;PLUGIN;os::linux::local::plugin"
-clapi -o STPL -a setmacro -v "disk-remote-Model-Service;USERNAME;remote_centreon"
-clapi -o STPL -a setmacro -v "disk-remote-Model-Service;WARNING;80"
-clapi -o STPL -a setmacro -v "disk-remote-Model-Service;CRITICAL;90"
-clapi -o STPL -a setmacro -v "disk-remote-Model-Service;MODE;storage"
-clapi -o STPL -a setparam -v "disk-remote-Model-Service;graphtemplate;Storage"
+$CLAPI -o STPL -a add -v "disk-remote-Model-Service;disk-remote-model;Model-service-active"
+$CLAPI-o STPL -a setparam -v "disk-remote-Model-Service;check_command;check_centreon_plugin_remote_os"
+$CLAPI -o STPL -a setmacro -v "disk-remote-Model-Service;PLUGIN;os::linux::local::plugin"
+$CLAPI-o STPL -a setmacro -v "disk-remote-Model-Service;USERNAME;remote_centreon"
+$CLAPI -o STPL -a setmacro -v "disk-remote-Model-Service;WARNING;80"
+$CLAPI-o STPL -a setmacro -v "disk-remote-Model-Service;CRITICAL;90"
+$CLAPI-o STPL -a setmacro -v "disk-remote-Model-Service;MODE;storage"
+$CLAPI-o STPL -a setparam -v "disk-remote-Model-Service;graphtemplate;Storage"
 
 # DISK
 # Disk home
 clapi -o STPL -a add -v "disk-remote-home-Model-Service;Disk-remote-Home;disk-remote-Model-Service"
 clapi -o STPL -a setmacro -v "disk-remote-home-Model-Service;OPTION;--name /home"
-
 # DISK
 # Disk root
 clapi -o STPL -a add -v "disk-remote-root-Model-Service;Disk-remote-Root;disk-remote-Model-Service"
