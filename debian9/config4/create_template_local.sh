@@ -25,10 +25,10 @@ create_cmd_local() {
   # Commandes CPU SNMP 
   #cmd_os_linux_local_cpu
   exist_object CMD cmd_os_linux_local_cpu-average
-  [ $? -ne 0 ] && $CLAPI -o CMD -a ADD -v 'cmd_os_linux_local_cpu-average;check;$CENTREONPLUGINS$/centreon_linux_local.pl --plugin=os::linux::local::plugin --mode=cpu --warning-average=$_SERVICEWARNING$ --critical-average=$_SERVICECRITICAL$ $_SERVICEOPTION$ '
+  [ $? -ne 0 ] && $CLAPI -o CMD -a ADD -v 'cmd_os_linux_local_cpu-average;check;$CENTREONPLUGINS$/centreon_linux_local.pl --plugin=os::linux::local::plugin --mode=cpu-detailed --warning-average=$_SERVICEWARNING$ --critical-average=$_SERVICECRITICAL$ $_SERVICEOPTION$ '
   
   exist_object CMD cmd_os_linux_local_cpu-core
-  [ $? -ne 0 ] && $CLAPI -o CMD -a ADD -v 'cmd_os_linux_local_cpu-core;check;$CENTREONPLUGINS$/centreon_linux_local.pl --plugin=os::linux::local::plugin --mode=cpu --warning-core=$_SERVICEWARNING$ --critical-core=$_SERVICECRITICAL$ $_SERVICEOPTION$ '
+  [ $? -ne 0 ] && $CLAPI -o CMD -a ADD -v 'cmd_os_linux_local_cpu-core;check;$CENTREONPLUGINS$/centreon_linux_local.pl --plugin=os::linux::local::plugin --mode=cpu-detailed --warning-core=$_SERVICEWARNING$ --critical-core=$_SERVICECRITICAL$ $_SERVICEOPTION$ '
   
   # cmd_os_linux_local_cpu-detailed
   exist_object CMD cmd_os_linux_local_cpu-det-user
