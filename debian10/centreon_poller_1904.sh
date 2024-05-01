@@ -1,26 +1,26 @@
 #!/bin/bash
-# Centreon poller install script for Debian Stretch
-# v 1.46
-# 24/03/2020
+# Centreon poller install script for Debian Buster
+# v 1.56
+# 20/11/2020
 # Thanks to Remy
 #
 export DEBIAN_FRONTEND=noninteractive
 # Variables
 ## Versions
-VERSION_BATCH="v 1.46"
-CLIB_VER="18.10.0"
-CONNECTOR_VER="18.10.0"
-ENGINE_VER="18.10.0"
+VERSION_BATCH="v 1.56"
+CLIB_VER="19.04.1"
+CONNECTOR_VER="19.04.1"
+ENGINE_VER="19.04.3"
 PLUGIN_VER="2.2"
 PLUGIN_CENTREON_VER="20200204"
-BROKER_VER="18.10.2"
-CENTREON_VER="18.10.12"
+BROKER_VER="19.04.0"
+CENTREON_VER="19.04.20"
 # MariaDB Series
 MARIADB_VER='10.0'
 ## Sources URL
 BASE_URL="http://files.download.centreon.com/public"
 CLIB_URL="${BASE_URL}/centreon-clib/centreon-clib-${CLIB_VER}.tar.gz"
-CONNECTOR_URL="${BASE_URL}/centreon-connectors/centreon-connectors-${CONNECTOR_VER}.tar.gz"
+CONNECTOR_URL="${BASE_URL}/centreon-connectors/centreon-connector-${CONNECTOR_VER}.tar.gz"
 ENGINE_URL="${BASE_URL}/centreon-engine/centreon-engine-${ENGINE_VER}.tar.gz"
 PLUGIN_URL="https://www.monitoring-plugins.org/download/monitoring-plugins-${PLUGIN_VER}.tar.gz"
 PLUGIN_CENTREON_URL="${BASE_URL}/centreon-plugins/centreon-plugins-${PLUGIN_CENTREON_VER}.tar.gz"
@@ -63,11 +63,14 @@ function text_params () {
 function nonfree_install () {
 [ "$SCRIPT_VERBOSE" = true ] && echo "
 ======================================================================
-           Add Stretch repo for non-free
+           Add Buster repo for non-free
 ======================================================================
 " | tee -a ${INSTALL_LOG}
 
-echo 'deb http://ftp.fr.debian.org/debian/ stretch non-free' > /etc/apt/sources.list.d/strech-nonfree.list
+if [ ! -f /etc/apt/sources.list.d/buster-nonfree.list ] ;
+then
+  echo 'deb http://ftp.fr.debian.org/debian/ buster non-free' > /etc/apt/sources.list.d/stretch-nonfree.list
+fi
 
 apt-get update >> ${INSTALL_LOG}
 }
@@ -80,7 +83,7 @@ function clib_install () {
 ======================================================================
 " | tee -a ${INSTALL_LOG}
 
-apt-get install -y build-essential cmake >> ${INSTALL_LOG}
+apt-get install -y build-essential wget cmake >> ${INSTALL_LOG}
 
 cd ${DL_DIR}
 if [[ -e centreon-clib-${CLIB_VER}.tar.gz ]] ;
@@ -88,13 +91,14 @@ if [[ -e centreon-clib-${CLIB_VER}.tar.gz ]] ;
     echo 'File already exist !' | tee -a ${INSTALL_LOG}
   else
     wget ${CLIB_URL} -O ${DL_DIR}/centreon-clib-${CLIB_VER}.tar.gz >> ${INSTALL_LOG}
+    [ $? != 0 ] && return 1
 fi
 
 tar xzf centreon-clib-${CLIB_VER}.tar.gz
-cd centreon-clib-${CLIB_VER}/build
+cd centreon-clib-${CLIB_VER}
 
 # add directive compilation
-sed -i '32i\set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++98 -fpermissive")' ${DL_DIR}/centreon-clib-${CLIB_VER}/build/CMakeLists.txt
+sed -i '32i\set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++98 -fpermissive")' ${DL_DIR}/centreon-clib-${CLIB_VER}/CMakeLists.txt
 
 cmake \
    -DWITH_TESTING=0 \
@@ -117,14 +121,15 @@ function centreon_connectors_install () {
 apt-get install -y libperl-dev >> ${INSTALL_LOG}
 
 cd ${DL_DIR}
-if [[ -e centreon-connectors-${CONNECTOR_VER}.tar.gz ]]
+if [[ -e centreon-connector-${CONNECTOR_VER}.tar.gz ]]
   then
     echo 'File already exist !' | tee -a ${INSTALL_LOG}
   else
-    wget ${CONNECTOR_URL} -O ${DL_DIR}/centreon-connectors-${CONNECTOR_VER}.tar.gz >> ${INSTALL_LOG}
+    wget ${CONNECTOR_URL} -O ${DL_DIR}/centreon-connector-${CONNECTOR_VER}.tar.gz >> ${INSTALL_LOG}
+    [ $? != 0 ] && return 1
 fi
 
-tar xzf centreon-connectors-${CONNECTOR_VER}.tar.gz
+tar xzf centreon-connector-${CONNECTOR_VER}.tar.gz
 cd ${DL_DIR}/centreon-connector-${CONNECTOR_VER}/perl/build
 
 # add directive compilation
@@ -139,7 +144,7 @@ make >> ${INSTALL_LOG}
 make install >> ${INSTALL_LOG}
 
 # install Centreon SSH Connector
-apt-get install -y libssh2-1-dev libgcrypt11-dev >> ${INSTALL_LOG}
+apt-get install -y libssh2-1-dev libgcrypt-dev >> ${INSTALL_LOG}
 
 # Cleanup to prevent space full on /var
 apt-get clean
@@ -179,6 +184,7 @@ if [[ -e centreon-engine-${ENGINE_VER}.tar.gz ]]
     echo 'File already exist !' | tee -a ${INSTALL_LOG}
   else
     wget ${ENGINE_URL} -O ${DL_DIR}/centreon-engine-${ENGINE_VER}.tar.gz >> ${INSTALL_LOG}
+    [ $? != 0 ] && return 1
 fi
 
 tar xzf centreon-engine-${ENGINE_VER}.tar.gz
@@ -231,6 +237,7 @@ if [[ -e monitoring-plugins-${PLUGIN_VER}.tar.gz ]]
     echo 'File already exist !' | tee -a ${INSTALL_LOG}
   else
     wget --no-check-certificate ${PLUGIN_URL} -O ${DL_DIR}/monitoring-plugins-${PLUGIN_VER}.tar.gz >> ${INSTALL_LOG}
+    [ $? != 0 ] && return 1
 fi
 
 tar xzf monitoring-plugins-${PLUGIN_VER}.tar.gz
@@ -255,7 +262,6 @@ cd ${DL_DIR}
 DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes libxml-libxml-perl libjson-perl libwww-perl libxml-xpath-perl \
             libxml-simple-perl libdatetime-perl libdate-manip-perl libnet-ldap-perl \
             libnet-telnet-perl libnet-ntp-perl libnet-dns-perl libdbi-perl libdbd-mysql-perl libdbd-pg-perl git-core >> ${INSTALL_LOG}
-git clone https://github.com/centreon/centreon-plugins.git >> ${INSTALL_LOG}
 
 cd ${DL_DIR}
 if [[ -e centreon-plugins-${PLUGIN_CENTREON_VER}.tar.gz ]]
@@ -272,6 +278,24 @@ chown -R ${ENGINE_USER}:${ENGINE_GROUP} *
 chmod +x *
 mkdir -p /usr/lib/centreon/plugins
 cp -Rp * /usr/lib/centreon/plugins/
+
+#bug plugin 20191016
+if [[ ${PLUGIN_CENTREON_VER} == "20191016" ]]; then
+  cd ${DL_DIR}
+  if [[ -e centreon-plugins-20190704.tar.gz ]]
+  then
+    echo 'File already exist !' | tee -a ${INSTALL_LOG}
+  else
+    wget http://files.download.centreon.com/public/centreon-plugins/centreon-plugins-20190704.tar.gz -O ${DL_DIR}/centreon-plugins-20190704.tar.gz >> ${INSTALL_LOG}
+  fi
+
+  tar xzf centreon-plugins-20190704.tar.gz
+  cd ${DL_DIR}/centreon-plugins-20190704
+  chown -R ${ENGINE_USER}:${ENGINE_GROUP} *
+  chmod +x *
+  cp centreon_centreon_database.pl /usr/lib/centreon/plugins/
+  cp centreon_mysql.pl /usr/lib/centreon/plugins/
+fi
 }
 
 function centreon_broker_install() {
@@ -293,6 +317,7 @@ apt-get install -y libpango1.0-dev libxml2-dev >> ${INSTALL_LOG}
 # compile rrdtools
 cd ${DL_DIR}
 wget http://oss.oetiker.ch/rrdtool/pub/rrdtool-1.4.7.tar.gz >> ${INSTALL_LOG}
+[ $? != 0 ] && return 1
 tar xzf rrdtool-1.4.7.tar.gz
 cd ${DL_DIR}/rrdtool-1.4.7
 ./configure --prefix=/opt/rddtool-broker >> ${INSTALL_LOG}
@@ -317,6 +342,7 @@ if [[ -e centreon-broker-${BROKER_VER}.tar.gz ]]
     echo 'File already exist !'
   else
     wget ${BROKER_URL} -O ${DL_DIR}/centreon-broker-${BROKER_VER}.tar.gz >> ${INSTALL_LOG}
+    [ $? != 0 ] && return 1
 fi
 
 tar xzf centreon-broker-${BROKER_VER}.tar.gz
@@ -444,6 +470,39 @@ PEAR_PATH="/usr/share/php/"
 EOF
 }
 
+function centreon_maj () {
+[ "$SCRIPT_VERBOSE" = true ] && echo "
+======================================================================
+                  Maj Centreon Web Interface
+======================================================================
+" | tee -a ${INSTALL_LOG}
+
+cd ${DL_DIR}
+
+if [[ -e centreon-web-${CENTREON_VER}.tar.gz ]]
+  then
+    echo 'File already exist!' | tee -a ${INSTALL_LOG}
+  else
+    wget ${CENTREON_URL} -O ${DL_DIR}/centreon-web-${CENTREON_VER}.tar.gz >> ${INSTALL_LOG}
+    [ $? != 0 ] && return 1
+fi
+
+tar xzf centreon-web-${CENTREON_VER}.tar.gz
+cd ${DL_DIR}/centreon-web-${CENTREON_VER}
+
+
+# clean /tmp
+rm -rf /tmp/*
+
+
+
+  [ "$SCRIPT_VERBOSE" = true ] && echo " Apply Centreon template " | tee -a ${INSTALL_LOG}
+
+  #./install.sh -u /etc/centreon -f ${DL_DIR}/${CENTREON_TMPL} >> ${INSTALL_LOG}
+ 
+
+}
+
 function centreon_install () {
 [ "$SCRIPT_VERBOSE" = true ] && echo "
 ======================================================================
@@ -505,6 +564,7 @@ if [[ -e centreon-web-${CENTREON_VER}.tar.gz ]]
     echo 'File already exist!' | tee -a ${INSTALL_LOG}
   else
     wget ${CENTREON_URL} -O ${DL_DIR}/centreon-web-${CENTREON_VER}.tar.gz >> ${INSTALL_LOG}
+    [ $? != 0 ] && return 1
 fi
 
 groupadd -g 6000 ${CENTREON_GROUP}
@@ -582,6 +642,21 @@ mkdir /var/log/centreon-broker
 chown ${BROKER_USER}: /var/log/centreon-broker
 chmod 775 /var/log/centreon-broker
 
+#add cgroup centreon
+echo '[Unit]
+Description=Cgroup Centreon
+
+[Service]
+Type=oneshot
+ExecStart=/bin/true
+ExecReload=/bin/true
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target' > /lib/systemd/system/centreon.service
+
+systemctl daemon-reload
+systemctl enable centreon
 }
 
 
@@ -604,73 +679,146 @@ text_params
 nonfree_install 2>>${INSTALL_LOG}
 if [[ $? -ne 0 ]];
   then
-    echo -e "${bold}Step1${normal}  => repo non-free on Stretch Install                       ${STATUS_FAIL}"
+    echo -e "${bold}Step1${normal}  => repo non-free on Buster Install                        ${STATUS_FAIL}"
   else
-    echo -e "${bold}Step1${normal}  => repo non-free on Stretch Install                       ${STATUS_OK}"
+    echo -e "${bold}Step1${normal}  => repo non-free on Buster Install                        ${STATUS_OK}"
 fi
 
-clib_install 2>>${INSTALL_LOG}
-if [[ $? -ne 0 ]];
+verify_version "$CLIB_VER" "$CLIB_VER_OLD"
+if [[ $? -eq 1 ]];
   then
-    echo -e "${bold}Step2${normal}  => Clib install                                          ${STATUS_FAIL}"
+    clib_install 2>>${INSTALL_LOG}
+    if [[ $? -ne 0 ]];
+      then
+        echo -e "${bold}Step2${normal}  => Clib install                                          ${STATUS_FAIL}"
+      else
+        echo -e "${bold}Step2${normal}  => Clib install                                          ${STATUS_OK}"
+        maj_conf "CLIB_VER" "$CLIB_VER_OLD" "$CLIB_VER"
+    fi
   else
-    echo -e "${bold}Step2${normal}  => Clib install                                          ${STATUS_OK}"
+    echo -e "${bold}Step2${normal}  => Clib already installed                                ${STATUS_OK}"
 fi
 
-centreon_connectors_install 2>>${INSTALL_LOG}
-if [[ $? -ne 0 ]];
+verify_version "$CONNECTOR_VER" "$CONNECTOR_VER_OLD"
+if [[ $? -eq 1 ]];
   then
-    echo -e "${bold}Step3${normal}  => Centreon Perl and SSH connectors install              ${STATUS_FAIL}"
+    centreon_connectors_install 2>>${INSTALL_LOG}
+    if [[ $? -ne 0 ]];
+      then
+        echo -e "${bold}Step3${normal}  => Centreon Perl and SSH connectors install              ${STATUS_FAIL}"
+      else
+        echo -e "${bold}Step3${normal}  => Centreon Perl and SSH connectors install              ${STATUS_OK}"
+        maj_conf "CONNECTOR_VER" "$CONNECTOR_VER_OLD" "$CONNECTOR_VER"
+    fi
   else
-    echo -e "${bold}Step3${normal}  => Centreon Perl and SSH connectors install              ${STATUS_OK}"
+    echo -e  "${bold}Step3${normal}  => Centreon Perl and SSH connectors already installed    ${STATUS_OK}"
 fi
 
-centreon_engine_install 2>>${INSTALL_LOG}
-if [[ $? -ne 0 ]];
+verify_version "$ENGINE_VER" "$ENGINE_VER_OLD"
+if [[ $? -eq 1 ]];
   then
-    echo -e "${bold}Step4${normal}  => Centreon Engine install                               ${STATUS_FAIL}"
+    centreon_engine_install 2>>${INSTALL_LOG}
+    if [[ $? -ne 0 ]];
+      then
+        echo -e "${bold}Step4${normal}  => Centreon Engine install                               ${STATUS_FAIL}"
+      else
+        echo -e "${bold}Step4${normal}  => Centreon Engine install                               ${STATUS_OK}"
+        maj_conf "ENGINE_VER" "$ENGINE_VER_OLD" "$ENGINE_VER"
+    fi
   else
-    echo -e "${bold}Step4${normal}  => Centreon Engine install                               ${STATUS_OK}"
+    echo -e     "${bold}Step4${normal}  => Centreon Engine already installed                     ${STATUS_OK}"
 fi
 
-monitoring_plugin_install 2>>${INSTALL_LOG}
-if [[ $? -ne 0 ]];
+verify_version "$PLUGIN_VER" "$PLUGIN_VER_OLD"
+if [[ $? -eq 1 ]];
   then
-    echo -e "${bold}Step5${normal}  => Monitoring plugins install                            ${STATUS_FAIL}"
+    monitoring_plugin_install 2>>${INSTALL_LOG}
+    if [[ $? -ne 0 ]];
+      then
+        echo -e "${bold}Step5${normal}  => Monitoring plugins install                            ${STATUS_FAIL}"
+      else
+        echo -e "${bold}Step5${normal}  => Monitoring plugins install                            ${STATUS_OK}"
+        maj_conf "PLUGIN_VER" "$PLUGIN_VER_OLD" "$PLUGIN_VER"    
+    fi
   else
-    echo -e "${bold}Step5${normal}  => Monitoring plugins install                            ${STATUS_OK}"
+    echo -e     "${bold}Step5${normal}  => Monitoring plugins already installed                  ${STATUS_OK}"
+fi    
+
+verify_version "$PLUGIN_CENTREON_VER" "$PLUGIN_CENTREON_VER_OLD"
+if [[ $? -eq 1 ]];
+  then
+    centreon_plugins_install 2>>${INSTALL_LOG}
+    if [[ $? -ne 0 ]];
+      then
+        echo -e "${bold}Step6${normal}  => Centreon plugins install                              ${STATUS_FAIL}"
+      else
+        echo -e "${bold}Step6${normal}  => Centreon plugins install                              ${STATUS_OK}"
+        maj_conf "PLUGIN_CENTREON_VER" "$PLUGIN_CENTREON_VER_OLD" "$PLUGIN_CENTREON_VER"    
+      fi
+  else
+    echo -e     "${bold}Step6${normal}  => Centreon plugins already installed                    ${STATUS_OK}"
 fi
 
-centreon_plugins_install 2>>${INSTALL_LOG}
-if [[ $? -ne 0 ]];
+verify_version "$BROKER_VER" "$BROKER_VER_OLD"
+if [[ $? -eq 1 ]];
   then
-    echo -e "${bold}Step6${normal}  => Centreon plugins install                              ${STATUS_FAIL}"
+    centreon_broker_install 2>>${INSTALL_LOG}
+    if [[ $? -ne 0 ]];
+      then
+        echo -e "${bold}Step7${normal}  => Centreon Broker install                               ${STATUS_FAIL}"
+      else
+        echo -e "${bold}Step7${normal}  => Centreon Broker install                               ${STATUS_OK}"
+        maj_conf "BROKER_VER" "$BROKER_VER_OLD" "$BROKER_VER"    
+    fi
   else
-    echo -e "${bold}Step6${normal}  => Centreon plugins install                              ${STATUS_OK}"
+    echo -e     "${bold}Step7${normal}  => Centreon Broker already installed                     ${STATUS_OK}"
 fi
 
-centreon_broker_install 2>>${INSTALL_LOG}
-if [[ $? -ne 0 ]];
+verify_version "$CENTREON_VER" "$CENTREON_VER_OLD"
+if [[ $? -eq 1 ]];
   then
-    echo -e "${bold}Step7${normal}  => Centreon Broker install                               ${STATUS_FAIL}"
+    if [ -z "$CENTREON_VER_OLD" ]; 
+    then
+      create_centreon_tmpl 2>>${INSTALL_LOG}
+      if [[ $? -ne 0 ]];
+        then
+          echo -e "${bold}Step8${normal}  => Centreon template generation                          ${STATUS_FAIL}"
+        else
+         echo -e "${bold}Step8${normal}  => Centreon template generation                          ${STATUS_OK}"
+      fi
+    else 
+      create_centreon_tmpl 2>>${INSTALL_LOG}
+      echo -e "${bold}Step8${normal}  => Centreon template generation                          ${STATUS_OK}"
+    fi
   else
-    echo -e "${bold}Step7${normal}  => Centreon Broker install                               ${STATUS_OK}"
+    echo -e   "${bold}Step8${normal}  => Centreon template already installed                   ${STATUS_OK}"
 fi
 
-create_centreon_tmpl 2>>${INSTALL_LOG}
-if [[ $? -ne 0 ]];
+verify_version "$CENTREON_VER" "$CENTREON_VER_OLD"
+if [[ $? -eq 1 ]];
   then
-    echo -e "${bold}Step8${normal}  => Centreon template generation                          ${STATUS_FAIL}"
+    if [ -z "$CENTREON_VER_OLD" ]; 
+    then
+      centreon_install 2>>${INSTALL_LOG}
+      if [[ $? -ne 0 ]];
+       then
+         echo -e "${bold}Step9${normal}  => Centreon web interface install                        ${STATUS_FAIL}"
+       else
+         echo -e "${bold}Step9${normal}  => Centreon web interface install                        ${STATUS_OK}"
+        maj_conf "CENTREON_VER" "$CENTREON_VER_OLD" "$CENTREON_VER"    
+      fi
+    else 
+      centreon_maj 2>>${INSTALL_LOG}
+      if [[ $? -ne 0 ]];
+      then
+        echo -e "${bold}Step9${normal}  => Centreon web interface maj                            ${STATUS_FAIL}"
+      else
+        echo -e "${bold}Step9${normal}  => Centreon web interface maj                           ${STATUS_OK}"
+        maj_conf "CENTREON_VER" "$CENTREON_VER_OLD" "$CENTREON_VER"    
+      fi
+    fi
   else
-    echo -e "${bold}Step8${normal}  => Centreon template generation                          ${STATUS_OK}"
-fi
-
-centreon_install 2>>${INSTALL_LOG}
-if [[ $? -ne 0 ]];
-  then
-    echo -e "${bold}Step9${normal}  => Centreon web interface install                        ${STATUS_FAIL}"
-  else
-    echo -e "${bold}Step9${normal}  => Centreon web interface install                        ${STATUS_OK}"
+    echo -e   "${bold}Step9${normal}  => Centreon web already installed                   ${STATUS_OK}"
 fi
 
 post_install 2>>${INSTALL_LOG}
@@ -683,6 +831,73 @@ fi
 
 echo ""
 echo "##### Install completed #####" >> ${INSTALL_LOG} 2>&1
+}
+
+# verify version
+# parameter $1:new version $2:old version
+# return 0:egal 1:update/install 2:newer version installed 
+function verify_version () {
+   if [ -z "$2" ]; then
+     return 1
+   fi
+   if [[ $1 == $2 ]]
+   then
+     return 0
+   fi
+       local IFS=.
+    local i ver1=($1) ver2=($2)
+    # fill empty fields in ver1 with zeros
+    for ((i=${#ver1[@]}; i<${#ver2[@]}; i++))
+    do
+        ver1[i]=0
+    done
+    for ((i=0; i<${#ver1[@]}; i++))
+    do
+        if [[ -z ${ver2[i]} ]]
+        then
+            # fill empty fields in ver2 with zeros
+            ver2[i]=0
+        fi
+        if ((10#${ver1[i]} > 10#${ver2[i]}))
+        then
+            return 1
+        fi
+        if ((10#${ver1[i]} < 10#${ver2[i]}))
+        then
+            return 2
+        fi
+    done
+    return 0
+}
+
+# maj conf
+# parameter $1: name variable $2: old value $3: new value
+function maj_conf () {
+	/bin/cat /etc/centreon/install_auto.conf | grep "^$1$"
+	if [[ $? -ne 0 ]];
+	then
+	  echo "$1=$3" >> /etc/centreon/install_auto.conf
+	else
+	  sed -i "s/$1=$2/$1=$3/" /etc/centreon/install_auto.conf
+	fi
+}
+
+function exist_conf () {
+	if [ ! -f /etc/centreon/install_auto.conf ] ;
+	then
+	  if [ ! -d /etc/centreon ] ;
+	  then
+	    mkdir /etc/centreon
+	  fi
+	  touch /etc/centreon/install_auto.conf
+	else
+          IFS="="
+	  while read -r var value
+          do
+            export "${var}_OLD"="$value"
+          done < /etc/centreon/install_auto.conf
+	fi 
+	
 }
 
 for i in "$@"
@@ -698,6 +913,7 @@ do
 done
 
 # Exec main function
+exist_conf
 main
 echo -e ""
 echo -e "${bold}Go to Central Server for configuration "

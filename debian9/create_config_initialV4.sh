@@ -1,5 +1,11 @@
 #!/bin/bash
-# create_config_initialV3.sh
+# create_config_initialV4.sh
+# version 4.01
+# 12/10/2019
+# use debug
+# version 4
+# date 20/05/2019
+# use centreon-plugins fatpacked
 # version 3.02
 # Enhancements : fix notification for admin
 # version 3.01
@@ -59,26 +65,25 @@
 # define directory
 BASE_DIR=$(dirname $0)
 
-. $BASE_DIR/config/functions.sh
-. $BASE_DIR/config/create_base.sh
-. $BASE_DIR/config/create_template_local.sh
-. $BASE_DIR/config/create_template_snmp.sh
-. $BASE_DIR/config/create_apps_mysql.sh
-. $BASE_DIR/config/create_apps_centreon.sh
+. $BASE_DIR/config4/functions.sh
+. $BASE_DIR/config4/create_base.sh
+. $BASE_DIR/config4/create_template_local.sh
+. $BASE_DIR/config4/create_template_snmp.sh
+. $BASE_DIR/config4/create_apps_mysql.sh
+. $BASE_DIR/config4/create_apps_centreon.sh
 
 # Usage info
 show_help() {
 cat << EOF
-Usage: ${0##*/} -u=<user centreon> -p=<passwd centreon> -d=<user database centreon> -w=<passwd database> -s=[yes|no] -m=[restart|reload]
-
+Usage: ${0##*/} -u=<user centreon> -p=<passwd centreon> -d=<user database centreon> -w=<passwd database> -s=[yes|no] -m=[restart|reload] -db=[yes|no]
 This program create initial configuration
-
     -u|--user User Centreon.
     -p|--password Password Centreon.
     -d|--userdatabase User Database Centreon
     -w|--passworddatabase Password Database Centreon.
     -s|--storage Create Storage service (yes/no)
     -m|--method Method start engine
+    -db|--debug print command
     -h|--help     help
 EOF
 }
@@ -110,6 +115,10 @@ do
       MODE_START="${i#*=}"
       shift # past argument=value
       ;;
+    -db=*|--debug=*)
+      DEBUG="${i#*=}"
+      shift # past argument=value
+      ;;
     -h|--help)
       show_help
       exit 2
@@ -134,6 +143,14 @@ if [[ $ADD_STORAGE =~ ^[yY][eE][sS]|[yY]$ ]]; then
 else
   ADD_STORAGE="no"
 fi
+
+# Check yes/no
+if [[ $DEBUG =~ ^[yY][eE][sS]|[yY]$ ]]; then
+  DEBUG=1
+else
+  DEBUG=0
+fi
+
 
 # Check reload/restart
 if [[ $MODE_START =~ ^[rR][eE][sS][tT][aA][rR][tT]$ ]]; then
@@ -238,7 +255,7 @@ then
   if [ "$ADD_STORAGE" == "yes" ]
   then
     echo "add storage"
-    for i in `/usr/lib/centreon/plugins/centreon_plugins.pl --plugin=os::linux::local::plugin --mode=list-storages --filter-type=ext | /bin/grep -v Skipping | /bin/sed '1d' | /usr/bin/awk ' { print $1} '`
+    for i in `/usr/lib/centreon/plugins/centreon_linux_local.pl --plugin=os::linux::local::plugin --mode=list-storages --filter-type=ext | /bin/grep -v Skipping | /bin/sed '1d' | /usr/bin/awk ' { print $1} '`
     do
       $CLAPI -o service -a add -v "Central;Storage-$i;stpl_os_linux_local_disk_name"
       $CLAPI -o service -a setmacro -v "Central;Storage-`echo $i | sed "s/'//g"`;DISKNAME;$i"

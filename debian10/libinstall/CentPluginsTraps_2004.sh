@@ -2,12 +2,28 @@
 #----
 ## @Synopsis	Install script for CentPluginsTraps
 ## @Copyright	Copyright 2008, Guillaume Watteeux
+## @Copyright	Copyright 2008-2020, Centreon
 ## @license	GPL : http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 ## Install script for CentPluginsTraps
 #----
-# install script for CentPlugins
-#################################
-# SVN: $Id$
+## Centreon is developed with GPL Licence 2.0
+##
+## GPL License: http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
+##
+## Developed by : Julien Mathis - Romain Le Merlus
+## Contributors : Guillaume Watteeux - Maximilien Bersoult
+##
+## This program is free software; you can redistribute it and/or
+## modify it under the terms of the GNU General Public License
+## as published by the Free Software Foundation; either version 2
+## of the License, or (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+##    For information : infos@centreon.com
 
 echo -e "\n$line"
 echo -e "\t$(gettext "Starting CentreonTrapD Installation")"
@@ -15,10 +31,12 @@ echo -e "$line"
 
 ###### Check disk space
 check_tmp_disk_space
-if [ "$silent_install" -eq 1 ] ; then
-  [ "$?" -eq 1 ] && purge_centreon_tmp_dir "silent"
-else
-  [ "$?" -eq 1 ] && purge_centreon_tmp_dir
+if [ "$?" -eq 1 ] ; then
+  if [ "$silent_install" -eq 1 ] ; then
+    purge_centreon_tmp_dir "silent"
+  else
+    purge_centreon_tmp_dir
+  fi
 fi
 
 ## Where is nagios_pluginsdir
@@ -200,14 +218,19 @@ fi
 ## Install all config file
 write_snmp_conf="1"
 if [ "$upgrade" = "1" ]; then
-    yes_no_default "$(gettext "Should I overwrite all your SNMP configuration files?")"
-    if [ "$?" -eq 0 ] ; then
-        write_snmp_conf="1"
-	    log "INFO" "$(gettext "SNMP configuration will be overwritten")"
-    else
-        write_snmp_conf="0"
-        log "INFO" "$(gettext "Keeping configuration files")"
-    fi
+  	if [ "$silent_install" -ne 1 ] ; then
+      yes_no_default "$(gettext "Should I overwrite all your SNMP configuration files?")"
+      if [ "$?" -eq 0 ] ; then
+          write_snmp_conf="1"
+	      log "INFO" "$(gettext "SNMP configuration will be overwritten")"
+      else
+          write_snmp_conf="0"
+          log "INFO" "$(gettext "Keeping configuration files")"
+      fi
+	else
+        	write_snmp_conf="0"
+        	log "INFO" "$(gettext "Keeping configuration files")"
+	fi
 fi
 if [ "$write_snmp_conf" = "1" ]; then
     log "INFO" "$(gettext "Install") : snmptrapd.conf"
